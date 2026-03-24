@@ -20,13 +20,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
     {
         ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["AppSettings:Issuer"],
         ValidateAudience = true,
+        ValidAudience = builder.Configuration["AppSettings:Audience"],
         ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration.GetValue<string>("AppSettings:Issuer"),
-        ValidAudience = builder.Configuration.GetValue<string>("AppSettings:Audience"),
         IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("AppSettings:Token")!)),
-        ClockSkew = TimeSpan.Zero
+        ValidateIssuerSigningKey = true,
     };
 });
 
@@ -42,6 +41,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using User = JwtAuthDotNet9.Entities.User;
 
 namespace JwtAuthDotNet9.Services
 {
@@ -15,28 +16,28 @@ namespace JwtAuthDotNet9.Services
     {
         public async Task<string?> LoginAsync(UserDTO request)
         {
-            var user = await context.Users.FirstOrDefaultAsync(u => u.UserName == request.Username);
+            User? user = await context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
 
             if (user is null)
                 return null;
 
-            if (new PasswordHasher<IdentityUser>().VerifyHashedPassword(user, user.PasswordHash, request.Password) == PasswordVerificationResult.Failed)
+            if (new PasswordHasher<User>().VerifyHashedPassword(user, user.Password, request.Password) == PasswordVerificationResult.Failed)
                 return null;
 
             return CreateToken(user);
         }
 
-        public async Task<IdentityUser?> RegisterAsync(UserDTO request)
+        public async Task<User?> RegisterAsync(UserDTO request)
         {
-            if(await context.Users.AnyAsync(u => u.UserName == request.Username))
+            if(await context.Users.AnyAsync(u => u.Username == request.Username))
                 return null;
 
-            IdentityUser user = new IdentityUser();
+            User user = new User();
 
-            string hashedPassword = new PasswordHasher<IdentityUser>().HashPassword(user, request.Password);
+            string hashedPassword = new PasswordHasher<User>().HashPassword(user, request.Password);
 
-            user.UserName = request.Username;
-            user.PasswordHash = hashedPassword;
+            user.Username = request.Username;
+            user.Password = hashedPassword;
 
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -44,12 +45,13 @@ namespace JwtAuthDotNet9.Services
             return user;
         }
 
-        private string CreateToken(IdentityUser user)
+        private string CreateToken(User user)
         {
             List<Claim> clains = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role)
             };
 
             SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration.GetValue<string>("AppSettings:Token")!));

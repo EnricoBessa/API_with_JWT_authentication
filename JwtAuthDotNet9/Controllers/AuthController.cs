@@ -2,14 +2,8 @@
 using JwtAuthDotNet9.Models;
 using JwtAuthDotNet9.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using RouteAttribute = Microsoft.AspNetCore.Components.RouteAttribute;
 
 namespace JwtAuthDotNet9.Controllers
@@ -21,7 +15,7 @@ namespace JwtAuthDotNet9.Controllers
         public static IdentityUser user = new IdentityUser();
 
         [HttpPost("register")]
-        public async Task<ActionResult<ActionResult<IdentityUser>>> RegisterAsync(UserDTO request)
+        public async Task<ActionResult<ActionResult<User>>> RegisterAsync(UserDTO request)
         {
             var user = await authService.RegisterAsync(request);
 
@@ -43,10 +37,17 @@ namespace JwtAuthDotNet9.Controllers
         }
 
         [Authorize]
-        [HttpGet]
+        [HttpGet("auth")]
         public IActionResult AuthenticatedOnlyEndpoint()
         {
             return Ok("You are authenticated!");
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin-only")]
+        public IActionResult AdminOnlyEndpoint()
+        {
+            return Ok("You are an admin!");
         }
     }
 }
